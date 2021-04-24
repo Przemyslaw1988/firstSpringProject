@@ -2,6 +2,7 @@ package com.example.bookpz.order.infrastructure;
 
 import com.example.bookpz.order.domain.Order;
 import com.example.bookpz.order.domain.OrderRepository;
+import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -9,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
-
-public class MemoryOrderRepository implements OrderRepository {
+@Repository
+class MemoryOrderRepository implements OrderRepository {
     private final Map<Long, Order> storage = new ConcurrentHashMap<>();
     private final AtomicLong NEXT_ID = new AtomicLong(0L);
 

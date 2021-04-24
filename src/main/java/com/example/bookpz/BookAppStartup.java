@@ -49,10 +49,10 @@ public class BookAppStartup implements CommandLineRunner {
         //CatalogService service = new CatalogService();
         initData();
         searchCatalog();
-
+        placeOrder();
     }
 
-    private void placeOrder() {
+    public void placeOrder() {
         Book panTadeusz = catalog.findOneByTitle("Pan Tadeusz")
                 .orElseThrow(() -> new IllegalStateException("Cannot find a book"));
         Book chlopi = catalog.findOneByTitle("Chłopi")

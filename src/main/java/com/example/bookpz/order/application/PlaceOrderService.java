@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 @Service
 @RequiredArgsConstructor
 public class PlaceOrderService implements PlaceOrderUseCase {
+
     private final OrderRepository repository;
 
     @Override
