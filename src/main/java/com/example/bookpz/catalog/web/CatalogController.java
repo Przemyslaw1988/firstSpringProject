@@ -1,12 +1,17 @@
 package com.example.bookpz.catalog.web;
 
 import com.example.bookpz.catalog.application.port.CatalogUseCase;
+import com.example.bookpz.catalog.application.port.CatalogUseCase.CreateBookCommand;
 import com.example.bookpz.catalog.domain.Book;
 import lombok.AllArgsConstructor;
+import lombok.Data;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
+import java.math.BigDecimal;
+import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -23,7 +28,7 @@ public class CatalogController {
     public List<Book> getAll(
             @RequestParam Optional<String> title,
             @RequestParam Optional<String> author,
-            @RequestParam( defaultValue  = "1") int limit
+            @RequestParam(defaultValue = "2") int limit
     ) {
         if (title.isPresent() && author.isPresent()) {
             return catalog.findByTitleAndAuthor(title.get(), author.get());
@@ -44,4 +49,28 @@ public class CatalogController {
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
+
+    @PostMapping
+    @ResponseStatus(HttpStatus.CREATED)
+    public ResponseEntity<Void> addBook(@RequestBody RestCreatedBookCommand command) {
+        Book book = catalog.addBook(command.toCommand());
+        return ResponseEntity.created(createBookUri(book)).build();
+    }
+
+    private URI createBookUri(Book book) {
+        return ServletUriComponentsBuilder.fromCurrentRequestUri().path("/" + book.getId().toString()).build().toUri();
+    }
+
+    @Data
+    private static class RestCreatedBookCommand {
+        String title;
+        String author;
+        Integer year;
+        BigDecimal price;
+
+        CreateBookCommand toCommand() {
+            return new CreateBookCommand(title, author, year, price);
+        }
+    }
+
 }
