@@ -13,6 +13,8 @@ import static java.util.Collections.emptyList;
 public interface CatalogUseCase {
     List<Book> findAll();
 
+    Optional<Book> findById(Long id);
+
     List<Book> findByTitle(String title);
 
     List<Book> findByAuthor(String author);
