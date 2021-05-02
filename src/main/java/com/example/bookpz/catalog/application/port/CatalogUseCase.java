@@ -21,6 +21,10 @@ public interface CatalogUseCase {
 
     Optional<Book> findOneByTitle(String title);
 
+    Optional<Book> findOneByAuthor(String author);
+
+    List<Book> findByTitleAndAuthor(String title, String author);
+
     Optional<Book> findOneByTitleAndAuthor(String title, String author);
 
     void addBook(CreateBookCommand command);
