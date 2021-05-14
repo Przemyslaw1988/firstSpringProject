@@ -82,6 +82,7 @@ public interface CatalogUseCase {
         boolean success;
         List<String> errors;
     }
+
     @Value
     class UpdateBookCoverCommand {
         long id;

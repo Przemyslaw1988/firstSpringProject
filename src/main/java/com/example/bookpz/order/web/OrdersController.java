@@ -1,97 +1,111 @@
 package com.example.bookpz.order.web;
 
-import com.example.bookpz.order.application.port.PlaceOrderUseCase;
-import com.example.bookpz.order.application.port.PlaceOrderUseCase.PlaceOrderCommand;
-import com.example.bookpz.order.application.port.PlaceOrderUseCase.PlaceOrderResponse;
-import com.example.bookpz.order.application.port.PlaceOrderUseCase.UpdateOrderCommand;
-import com.example.bookpz.order.application.port.PlaceOrderUseCase.UpdateOrderResponse;
+import com.example.bookpz.order.application.port.ManipulateOrderUseCase;
+import com.example.bookpz.order.application.port.ManipulateOrderUseCase.PlaceOrderCommand;
 import com.example.bookpz.order.application.port.QueryOrderUseCase;
-import com.example.bookpz.order.domain.Order;
+import com.example.bookpz.order.application.port.QueryOrderUseCase.RichOrder;
 import com.example.bookpz.order.domain.OrderItem;
 import com.example.bookpz.order.domain.OrderStatus;
 import com.example.bookpz.order.domain.Recipient;
+import com.example.bookpz.web.CreatedUri;
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotBlank;
 import java.net.URI;
 import java.util.List;
+import java.util.stream.Collectors;
+
+import static org.springframework.http.HttpStatus.*;
 
 @RestController
 @AllArgsConstructor
 @RequestMapping("/orders")
 public class OrdersController {
 
-    private final PlaceOrderUseCase placeOrderUseCase;
+    private final ManipulateOrderUseCase manipulateOrder;
     private final QueryOrderUseCase queryOrder;
 
     @GetMapping
-    @ResponseStatus(HttpStatus.OK)
-    public List<Order> getAll() {
+    public List<RichOrder> getOrders() {
         return queryOrder.findAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<?> getById(@PathVariable Long id) {
-        return queryOrder.findById(id).map(ResponseEntity::ok)
+    public ResponseEntity<RichOrder> getOrderById(@PathVariable Long id) {
+        return queryOrder.findById(id)
+                .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<Void> addOrder(@Valid @RequestBody RestOrderCommand command) {
-        PlaceOrderResponse response = placeOrderUseCase.placeOrder(command.toCreateOrderCommand());
-        return ResponseEntity.created(createOrderUri(response)).build();
+    @ResponseStatus(CREATED)
+    public ResponseEntity<Object> createOrder(@RequestBody CreateOrderCommand command) {
+        return manipulateOrder
+                .placeOrder(command.toPlaceOrderCommand())
+                .handle(
+                        orderId -> ResponseEntity.created(orderUri(orderId)).build(),
+                        error -> ResponseEntity.badRequest().body(error)
+                );
     }
 
-    @PatchMapping("/{id}")
-    @ResponseStatus(HttpStatus.ACCEPTED)
-    public void updateOrder(@PathVariable Long id, @RequestBody RestOrderCommand command) {
-        UpdateOrderResponse response = placeOrderUseCase.updateOrder(command.toUpdateOrderCommand(id));
-        if (!response.isSuccess()) {
-            String reason = String.join(", ", response.getErrors());
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, reason);
-        }
+    URI orderUri(Long orderId) {
+        return new CreatedUri("/" + orderId).uri();
+    }
+
+    @PutMapping("/{id}/status")
+    @ResponseStatus(ACCEPTED)
+    public void updateOrderStatus(@PathVariable Long id, @RequestBody UpdateStatusCommand command) {
+        OrderStatus orderStatus = OrderStatus
+                .parseString(command.status)
+                .orElseThrow(() -> new ResponseStatusException(BAD_REQUEST, "Unknown status: " + command.status));
+        manipulateOrder.updateOrderStatus(id, orderStatus);
     }
 
     @DeleteMapping("/{id}")
-    @ResponseStatus(HttpStatus.NO_CONTENT)
-    public void removeOrderById(@PathVariable Long id) {
-        placeOrderUseCase.removeById(id);
-    }
-
-    private URI createOrderUri(PlaceOrderResponse response) {
-        return ServletUriComponentsBuilder.fromCurrentRequestUri()
-                .path("/" + response.getOrderId().toString()).build().toUri();
+    @ResponseStatus(NO_CONTENT)
+    public void deleteOrder(@PathVariable Long id) {
+        manipulateOrder.deleteOrderById(id);
     }
 
     @Data
-    private static class RestOrderCommand {
+    static class CreateOrderCommand {
+        List<OrderItemCommand> items;
+        RecipientCommand recipient;
 
-        @NotBlank(message = "Insert correct data for items")
-        List<OrderItem> items;
-
-        @NotBlank(message = "Insert correct data for recipient")
-        Recipient recipient;
-
-        @NotBlank
-        OrderStatus status;
-
-        PlaceOrderCommand toCreateOrderCommand() {
-            return PlaceOrderCommand
-                    .builder()
-                    .items(items)
-                    .recipient(recipient)
-                    .build();
+        PlaceOrderCommand toPlaceOrderCommand() {
+            List<OrderItem> orderItems = items
+                    .stream()
+                    .map(item -> new OrderItem(item.bookId, item.quantity))
+                    .collect(Collectors.toList());
+            return new PlaceOrderCommand(orderItems, recipient.toRecipient());
         }
-        UpdateOrderCommand toUpdateOrderCommand(Long id) {
-            return new UpdateOrderCommand(id, status);
+    }
+
+    @Data
+    static class OrderItemCommand {
+        Long bookId;
+        int quantity;
+    }
+
+    @Data
+    static class RecipientCommand {
+        String name;
+        String phone;
+        String street;
+        String city;
+        String zipCode;
+        String email;
+
+        Recipient toRecipient() {
+            return new Recipient(name, phone, street, city, zipCode, email);
         }
+    }
+
+    @Data
+    static class UpdateStatusCommand {
+        String status;
     }
 }

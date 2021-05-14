@@ -58,7 +58,7 @@ class CatalogService implements CatalogUseCase {
     public Optional<Book> findOneByTitle(String title) {
         return repository.findAll()
                 .stream()
-                .filter(book -> book.getTitle().contains(title))
+                .filter(book -> book.getTitle().startsWith(title))
                 .findFirst();
     }
 

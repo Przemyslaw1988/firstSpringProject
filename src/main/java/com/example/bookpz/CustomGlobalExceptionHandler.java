@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
 public class CustomGlobalExceptionHandler {
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Object> handleException(MethodArgumentNotValidException ex){
+    public ResponseEntity<Object> handleException(MethodArgumentNotValidException ex) {
         Map<String, Object> body = new LinkedHashMap<>();
         HttpStatus status = HttpStatus.BAD_REQUEST;
         body.put("timestamp", new Date());

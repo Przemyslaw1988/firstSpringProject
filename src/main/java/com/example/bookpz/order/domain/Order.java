@@ -1,6 +1,5 @@
 package com.example.bookpz.order.domain;
 
-import com.example.bookpz.jpa.BaseEntity;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -10,7 +9,6 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -21,7 +19,7 @@ import java.util.List;
 @Entity
 @Table(name = "orders")
 @EntityListeners(AuditingEntityListener.class)
-public class Order extends BaseEntity {
+public class Order {
     @Id
     @GeneratedValue
     private Long id;
@@ -43,8 +41,4 @@ public class Order extends BaseEntity {
     @LastModifiedDate
     private LocalDateTime updateAt;
 
-    public BigDecimal totalPrice() {
-        return items.stream().map(item -> item.getBook().getPrice().multiply(new BigDecimal(item.getQuantity())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-    }
 }

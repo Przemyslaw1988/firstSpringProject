@@ -11,11 +11,11 @@ import java.math.BigDecimal;
 import java.util.Set;
 
 
-@Entity
-@RequiredArgsConstructor
-@ToString(exclude = "authors")
 @Setter
 @Getter
+@ToString(exclude = "authors")
+@RequiredArgsConstructor
+@Entity
 public class Book {
 
     @Id

@@ -5,7 +5,7 @@ import com.example.bookpz.catalog.application.port.CatalogUseCase;
 import com.example.bookpz.catalog.db.AuthorJpaRepository;
 import com.example.bookpz.catalog.domain.Author;
 import com.example.bookpz.catalog.domain.Book;
-import com.example.bookpz.order.application.port.PlaceOrderUseCase;
+import com.example.bookpz.order.application.port.ManipulateOrderUseCase;
 import com.example.bookpz.order.application.port.QueryOrderUseCase;
 import com.example.bookpz.order.domain.OrderItem;
 import com.example.bookpz.order.domain.Recipient;
@@ -17,20 +17,21 @@ import java.math.BigDecimal;
 import java.util.Set;
 
 import static com.example.bookpz.catalog.application.port.CatalogUseCase.CreateBookCommand;
-import static com.example.bookpz.order.application.port.PlaceOrderUseCase.PlaceOrderCommand;
-import static com.example.bookpz.order.application.port.PlaceOrderUseCase.PlaceOrderResponse;
+import static com.example.bookpz.order.application.port.ManipulateOrderUseCase.PlaceOrderCommand;
+import static com.example.bookpz.order.application.port.ManipulateOrderUseCase.PlaceOrderResponse;
 
 @Component
 @AllArgsConstructor
 public class BookAppStartup implements CommandLineRunner {
 
     private final CatalogUseCase catalog;
-    private final PlaceOrderUseCase placeOrder;
+    private final ManipulateOrderUseCase placeOrder;
     private final QueryOrderUseCase queryOrder;
     private final AuthorJpaRepository repository;
 
     @Override
     public void run(String... args) {
+
         initData();
         placeOrder();
     }
@@ -55,18 +56,20 @@ public class BookAppStartup implements CommandLineRunner {
         PlaceOrderCommand command = PlaceOrderCommand
                 .builder()
                 .recipient(recipient)
-                .item(new OrderItem(effectiveJava, 16))
-                .item(new OrderItem(javaPuzzlers, 7))
+                .item(new OrderItem(effectiveJava.getId(), 16))
+                .item(new OrderItem(javaPuzzlers.getId(), 7))
                 .build();
 
         PlaceOrderResponse response = placeOrder.placeOrder(command);
-        System.out.println("Created ORDER with id: " + response.getOrderId());
+        String result = response.handle(
+                orderId -> "Created ORDER with id: " + orderId,
+                error -> "Failed to created order: " + error
+        );
+        System.out.println(result);
 
-        //list all orders
+        // list all orders
         queryOrder.findAll()
-                .forEach(order -> {
-                    System.out.println("GOT ORDER WITH TOTAL PRICE: " + order.totalPrice() + " DETAILS: " + order);
-                });
+                .forEach(order -> System.out.println("GOT ORDER WITH TOTAL PRICE: " + order.totalPrice() + " DETAILS: " + order));
     }
 
 
@@ -78,7 +81,7 @@ public class BookAppStartup implements CommandLineRunner {
         repository.save(neal);
 
         CreateBookCommand effectiveJava = new CreateBookCommand(
-                "Efective Java",
+                "Effective Java",
                 Set.of(joshua.getId()),
                 2005,
                 new BigDecimal("79.00")

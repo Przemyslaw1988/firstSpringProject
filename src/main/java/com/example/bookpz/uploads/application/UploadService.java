@@ -1,4 +1,4 @@
-package com.example.bookpz.catalog.application;
+package com.example.bookpz.uploads.application;
 
 import com.example.bookpz.uploads.application.ports.UploadUseCase;
 import com.example.bookpz.uploads.db.UpdateJpaRepository;
